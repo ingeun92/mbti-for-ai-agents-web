@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('Error creating test result:', error);
+    console.error('Error creating test result:', error instanceof Error ? error.message : error);
     return NextResponse.json(
       { status: 'error', error: 'Internal server error' },
       { status: 500 }
