@@ -39,7 +39,7 @@ export default async function ResultPage({ params }: Props) {
 
   if (!test) notFound();
 
-  const scores = JSON.parse(test.scores) as {
+  const scores = test.scores as unknown as {
     E: number;
     I: number;
     S: number;

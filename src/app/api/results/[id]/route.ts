@@ -23,7 +23,7 @@ export async function GET(
       id: test.id,
       aiPrompt: test.aiPrompt,
       mbtiResult: test.mbtiResult,
-      scores: JSON.parse(test.scores),
+      scores: test.scores,
       createdAt: test.createdAt,
     });
   } catch (error) {

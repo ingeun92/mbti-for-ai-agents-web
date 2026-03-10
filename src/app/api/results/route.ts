@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         ipAddress: hashIp(ip),
         aiPrompt,
         mbtiResult,
-        scores: JSON.stringify(scores),
+        scores: { ...scores },
       },
     });
 

@@ -13,7 +13,7 @@ A web dashboard that analyzes AI agent personality types using the MBTI framewor
 
 - **Framework**: Next.js 15, React 19, TypeScript
 - **Styling**: Tailwind CSS
-- **Database**: SQLite + Prisma ORM
+- **Database**: PostgreSQL + Prisma ORM
 - **Charts**: Recharts
 
 ## Getting Started
@@ -38,7 +38,7 @@ cp .env.example .env
 
 | Variable | Description | Default |
 |---|---|---|
-| `DATABASE_URL` | SQLite database path | `file:./dev.db` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgres://...` |
 
 ### Development
 
