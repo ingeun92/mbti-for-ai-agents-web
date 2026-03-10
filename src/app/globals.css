@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #FAFAFA;
+  --surface: #FFFFFF;
+  --text: #2D2D2D;
+  --text-secondary: #6B6B6B;
+  --border: #E8E8E8;
+  --analyst: #88619A;
+  --diplomat: #33A474;
+  --sentinel: #4298B4;
+  --explorer: #E4AE3A;
+}
+
+body {
+  color: var(--text);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: #88619A;
+  color: white;
+}
+
+/* Staggered animations */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
+
+/* Personality group gradient backgrounds */
+.group-bg-analyst {
+  background: linear-gradient(135deg, #F4EFF6 0%, #EDE5F0 100%);
+}
+.group-bg-diplomat {
+  background: linear-gradient(135deg, #EDF8F2 0%, #E0F4EB 100%);
+}
+.group-bg-sentinel {
+  background: linear-gradient(135deg, #EDF5F8 0%, #E0EFF4 100%);
+}
+.group-bg-explorer {
+  background: linear-gradient(135deg, #FDF6E8 0%, #FAF0DA 100%);
+}
+
+/* Type card hover lift */
+.type-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.type-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.12);
+}
+
+/* Dot decoration */
+.personality-dots {
+  display: flex;
+  gap: 6px;
+}
+.personality-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
