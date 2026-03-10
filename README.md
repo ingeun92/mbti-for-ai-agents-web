@@ -1,13 +1,13 @@
 # MBTI for AI Agents - Web Dashboard
 
-AI 에이전트의 성격 유형을 MBTI 프레임워크로 분석하는 웹 대시보드입니다. 60개 질문에 대한 AI 에이전트의 응답을 기반으로 16가지 성격 유형 중 하나를 판별하고, 결과를 시각화하여 보여줍니다.
+A web dashboard that analyzes AI agent personality types using the MBTI framework. It determines one of 16 personality types based on an AI agent's responses to 60 questions and visualizes the results.
 
 ## Features
 
-- **MBTI 성격 유형 분석** - 4가지 심리 차원(E/I, S/N, T/F, J/P) 기반 성격 유형 판별
-- **레이더 차트 시각화** - Recharts 기반 점수 분포 시각화
-- **결과 공유** - 고유 URL과 Open Graph 메타데이터를 통한 소셜 공유
-- **Rate Limiting** - IP 기반 요청 제한 (시간당 10회)
+- **MBTI Personality Analysis** - Personality typing based on 4 psychological dimensions (E/I, S/N, T/F, J/P)
+- **Radar Chart Visualization** - Score distribution visualization powered by Recharts
+- **Shareable Results** - Social sharing via unique URLs and Open Graph metadata
+- **Rate Limiting** - IP-based request throttling (10 requests per hour)
 
 ## Tech Stack
 
@@ -38,7 +38,7 @@ cp .env.example .env
 
 | Variable | Description | Default |
 |---|---|---|
-| `DATABASE_URL` | SQLite 데이터베이스 경로 | `file:./dev.db` |
+| `DATABASE_URL` | SQLite database path | `file:./dev.db` |
 
 ### Development
 
@@ -46,7 +46,7 @@ cp .env.example .env
 npm run dev
 ```
 
-[http://localhost:3000](http://localhost:3000)에서 확인할 수 있습니다.
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 ### Build
 
@@ -59,11 +59,11 @@ npm start
 
 ### POST `/api/results`
 
-테스트 결과를 제출합니다.
+Submit test results.
 
 ```json
 {
-  "aiPrompt": "시스템 프롬프트",
+  "aiPrompt": "system prompt",
   "answers": [1, 2, 3, ...]
 }
 ```
@@ -72,7 +72,7 @@ npm start
 
 ### GET `/api/results/[id]`
 
-저장된 결과를 조회합니다.
+Retrieve a stored result.
 
 **Response**: `{ "id", "aiPrompt", "mbtiResult", "scores", "createdAt" }`
 
@@ -81,16 +81,16 @@ npm start
 ```
 src/
 ├── app/
-│   ├── page.tsx                # 홈페이지
-│   ├── layout.tsx              # 루트 레이아웃
-│   ├── result/[id]/            # 결과 페이지
-│   └── api/results/            # API 엔드포인트
-├── components/                 # UI 컴포넌트
+│   ├── page.tsx                # Homepage
+│   ├── layout.tsx              # Root layout
+│   ├── result/[id]/            # Result page
+│   └── api/results/            # API endpoints
+├── components/                 # UI components
 │   ├── RadarChart.tsx
 │   ├── ScoreBreakdown.tsx
 │   ├── TypeDescription.tsx
 │   └── CopyButton.tsx
-└── lib/                        # 유틸리티
+└── lib/                        # Utilities
     ├── prisma.ts
     ├── mbti-descriptions.ts
     ├── rate-limit.ts
@@ -99,4 +99,4 @@ src/
 
 ## License
 
-MIT License - [LICENSE](./LICENSE) 파일을 참고하세요.
+MIT License - See [LICENSE](./LICENSE) for details.
