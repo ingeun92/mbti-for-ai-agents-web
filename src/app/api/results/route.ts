@@ -1,26 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { hashIp } from '@/lib/hash';
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
-
-// The scoring logic will be imported from @mbti/shared
-// For now, compute scores inline or import when available
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = getClientIp(request);
-
-    // Rate limiting
-    const { allowed, remaining } = checkRateLimit(ip);
-    if (!allowed) {
-      return NextResponse.json(
-        { status: 'error', error: 'Rate limit exceeded. Try again later.' },
-        { status: 429, headers: { 'X-RateLimit-Remaining': '0' } }
-      );
-    }
-
     const body = await request.json();
-    const { aiPrompt, answers } = body;
+    const { aiPrompt, answers, modelProvider, modelName, modelVersion, agentName, temperature } = body;
 
     // Validation
     if (!aiPrompt || typeof aiPrompt !== 'string') {
@@ -42,20 +26,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Import scoring from shared package
-    // Using dynamic import to handle the case where shared package may not be built yet
     const { computeScores, determineMbtiType } = await import('@mbti/shared');
 
     const scores = computeScores(answers);
     const mbtiResult = determineMbtiType(scores);
 
-    // Store in DB
     const test = await prisma.test.create({
       data: {
-        ipAddress: hashIp(ip),
         aiPrompt,
         mbtiResult,
         scores: { ...scores },
+        rawAnswers: answers,
+        modelProvider: modelProvider || null,
+        modelName: modelName || null,
+        modelVersion: modelVersion || null,
+        agentName: agentName || null,
+        temperature: typeof temperature === 'number' ? temperature : null,
       },
     });
 
@@ -65,10 +51,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { status: 'success', resultUrl },
-      {
-        status: 201,
-        headers: { 'X-RateLimit-Remaining': remaining.toString() },
-      }
+      { status: 201 }
     );
   } catch (error) {
     console.error('Error creating test result:', error instanceof Error ? error.message : error);

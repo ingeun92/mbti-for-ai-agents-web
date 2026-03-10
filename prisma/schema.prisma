@@ -8,12 +8,20 @@ datasource db {
 }
 
 model Test {
-  id         String   @id @default(uuid())
-  ipAddress  String
-  aiPrompt   String
-  mbtiResult String
-  scores     Json
-  createdAt  DateTime @default(now())
+  id            String   @id @default(uuid())
+  aiPrompt      String
+  mbtiResult    String
+  scores        Json
+  rawAnswers    Int[]
+  modelProvider String?
+  modelName     String?
+  modelVersion  String?
+  agentName     String?
+  temperature   Float?
+  createdAt     DateTime @default(now())
 
-  @@index([ipAddress, createdAt])
+  @@index([modelProvider, modelName])
+  @@index([agentName])
+  @@index([mbtiResult])
+  @@index([createdAt])
 }
