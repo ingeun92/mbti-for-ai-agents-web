@@ -65,7 +65,7 @@ export default async function ResultPage({ params }: Props) {
             {group.name} &middot; AI Agent Personality
           </p>
           <h1
-            className="font-display text-7xl sm:text-8xl lg:text-9xl font-semibold tracking-tight leading-none py-2 italic"
+            className="font-display text-7xl sm:text-8xl lg:text-9xl font-semibold tracking-tight leading-none py-2"
             style={{ color: group.color }}
           >
             {test.mbtiResult}

@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { Fraunces, Nunito } from 'next/font/google';
+import { Inter, Nunito } from 'next/font/google';
+import TypesDropdown from '@/components/TypesDropdown';
 import './globals.css';
 
-const fraunces = Fraunces({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-fraunces',
+  variable: '--font-inter',
   display: 'swap',
 });
 
@@ -30,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko" className={`${fraunces.variable} ${nunito.variable}`}>
+    <html lang="ko" className={`${inter.variable} ${nunito.variable}`}>
       <body className="font-body min-h-screen flex flex-col bg-surface-50">
         <header className="bg-white border-b border-surface-300 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -50,6 +51,7 @@ export default function RootLayout({
               <a href="/" className="hover:text-body transition-colors hidden sm:block">
                 Home
               </a>
+              <TypesDropdown />
               <a
                 href="https://github.com/ingeun92/mbti-for-ai-agents"
                 target="_blank"

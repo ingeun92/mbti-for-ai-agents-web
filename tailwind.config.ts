@@ -45,7 +45,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ['var(--font-fraunces)', 'Georgia', 'serif'],
+        display: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         body: ['var(--font-nunito)', 'system-ui', 'sans-serif'],
       },
       borderRadius: {

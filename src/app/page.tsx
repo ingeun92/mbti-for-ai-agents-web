@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 const GROUPS = [
   {
     name: 'Analysts',
@@ -202,9 +204,10 @@ export default function HomePage() {
                 {/* Type Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {group.types.map(({ type, label, desc }) => (
-                    <div
+                    <Link
                       key={type}
-                      className={`type-card bg-white rounded-2xl border ${group.borderClass} p-5 cursor-default`}
+                      href={`/types/${type}`}
+                      className={`type-card bg-white rounded-2xl border ${group.borderClass} p-5 block hover:shadow-lg transition-shadow duration-300`}
                     >
                       {/* Avatar placeholder - colored circle with type initials */}
                       <div
@@ -220,7 +223,7 @@ export default function HomePage() {
                         <div className="text-base font-bold text-body mt-0.5">{label}</div>
                         <p className="text-xs text-body-light mt-2 leading-relaxed">{desc}</p>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
