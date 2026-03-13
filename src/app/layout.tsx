@@ -51,6 +51,9 @@ export default function RootLayout({
               <a href="/" className="hover:text-body transition-colors hidden sm:block">
                 Home
               </a>
+              <a href="/stats" className="hover:text-body transition-colors hidden sm:block">
+                Stats
+              </a>
               <TypesDropdown />
               <a
                 href="https://github.com/ingeun92/mbti-for-ai-agents"
