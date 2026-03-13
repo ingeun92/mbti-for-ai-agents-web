@@ -41,6 +41,7 @@ export default async function StatsPage() {
     allScores,
     uniqueAgents,
     uniqueModels,
+    testsWithPerformance,
   ] = await Promise.all([
     prisma.test.count(),
     prisma.test.groupBy({
@@ -77,6 +78,14 @@ export default async function StatsPage() {
     prisma.test.groupBy({
       by: ['modelName'],
       where: { modelName: { not: null } },
+    }),
+    prisma.test.findMany({
+      select: {
+        mbtiResult: true,
+        truthfulQA: true,
+        avgLatencyMs: true,
+        totalRetries: true,
+      },
     }),
   ]);
 
@@ -173,6 +182,89 @@ export default async function StatsPage() {
   ];
 
   const topType = mbtiSorted[0];
+
+  // === Performance Data Processing ===
+  interface TruthfulQAJson {
+    total: number;
+    correct: number;
+    accuracyRate: number;
+    hallucinationRate: number;
+    byCategory?: Record<string, { total: number; correct: number; accuracyRate: number }>;
+  }
+
+  const benchmarkAgg: Record<string, { count: number; totalAccuracy: number; totalHallucination: number }> = {};
+  const telemetryAgg: Record<string, { count: number; totalLatency: number; totalRetries: number }> = {};
+  const categoryAgg: Record<string, { total: number; correct: number }> = {};
+
+  testsWithPerformance.forEach((test) => {
+    const type = test.mbtiResult;
+
+    if (test.truthfulQA && typeof test.truthfulQA === 'object') {
+      const qa = test.truthfulQA as unknown as TruthfulQAJson;
+      if (typeof qa.accuracyRate === 'number') {
+        if (!benchmarkAgg[type]) benchmarkAgg[type] = { count: 0, totalAccuracy: 0, totalHallucination: 0 };
+        benchmarkAgg[type].count++;
+        benchmarkAgg[type].totalAccuracy += qa.accuracyRate;
+        benchmarkAgg[type].totalHallucination += qa.hallucinationRate;
+
+        if (qa.byCategory) {
+          Object.entries(qa.byCategory).forEach(([cat, data]) => {
+            if (!categoryAgg[cat]) categoryAgg[cat] = { total: 0, correct: 0 };
+            categoryAgg[cat].total += data.total;
+            categoryAgg[cat].correct += data.correct;
+          });
+        }
+      }
+    }
+
+    if (test.avgLatencyMs != null) {
+      if (!telemetryAgg[type]) telemetryAgg[type] = { count: 0, totalLatency: 0, totalRetries: 0 };
+      telemetryAgg[type].count++;
+      telemetryAgg[type].totalLatency += test.avgLatencyMs;
+      telemetryAgg[type].totalRetries += test.totalRetries || 0;
+    }
+  });
+
+  const benchmarkByType = Object.entries(benchmarkAgg)
+    .map(([type, agg]) => ({
+      type,
+      group: getGroup(type) as MbtiGroup,
+      color: GROUP_CONFIG[getGroup(type)].color,
+      testCount: agg.count,
+      avgAccuracy: agg.totalAccuracy / agg.count,
+      avgHallucination: agg.totalHallucination / agg.count,
+    }))
+    .sort((a, b) => b.avgAccuracy - a.avgAccuracy);
+
+  const telemetryByType = Object.entries(telemetryAgg)
+    .map(([type, agg]) => ({
+      type,
+      group: getGroup(type) as MbtiGroup,
+      color: GROUP_CONFIG[getGroup(type)].color,
+      testCount: agg.count,
+      avgLatency: agg.totalLatency / agg.count,
+      avgRetries: agg.totalRetries / agg.count,
+    }))
+    .sort((a, b) => a.avgLatency - b.avgLatency);
+
+  const categoryData = Object.entries(categoryAgg)
+    .map(([category, data]) => ({
+      category,
+      total: data.total,
+      correct: data.correct,
+      accuracy: data.total > 0 ? (data.correct / data.total) * 100 : 0,
+    }))
+    .sort((a, b) => b.accuracy - a.accuracy);
+
+  const totalBenchmarked = Object.values(benchmarkAgg).reduce((sum, a) => sum + a.count, 0);
+  const overallAccuracy = totalBenchmarked > 0
+    ? Object.values(benchmarkAgg).reduce((sum, a) => sum + a.totalAccuracy, 0) / totalBenchmarked
+    : 0;
+  const overallHallucination = totalBenchmarked > 0
+    ? Object.values(benchmarkAgg).reduce((sum, a) => sum + a.totalHallucination, 0) / totalBenchmarked
+    : 0;
+  const hasBenchmarkData = totalBenchmarked > 0;
+  const hasTelemetryData = Object.keys(telemetryAgg).length > 0;
 
   // Empty state check
   if (totalTests === 0) {
@@ -597,25 +689,261 @@ export default async function StatsPage() {
           </section>
         </div>
 
-        {/* ===== COMING SOON ===== */}
-        <section className="stats-coming-soon rounded-2xl p-8 sm:p-10 text-center animate-fade-up">
-          <div className="flex justify-center gap-2 mb-5">
-            {['#88619A', '#33A474', '#4298B4', '#E4AE3A'].map((c) => (
-              <span
-                key={c}
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: c, opacity: 0.5 }}
-              />
-            ))}
-          </div>
-          <h3 className="font-display text-lg font-semibold text-body-light mb-2">
-            Performance Insights Coming Soon
-          </h3>
-          <p className="text-sm text-body-muted max-w-lg mx-auto leading-relaxed">
-            Which MBTI type performs best at coding tasks? Which personality earns the most?
-            Cross-reference personality data with real-world agent performance metrics.
-          </p>
-        </section>
+        {/* ===== PERFORMANCE INSIGHTS ===== */}
+        {!hasBenchmarkData && !hasTelemetryData ? (
+          <section className="stats-coming-soon rounded-2xl p-8 sm:p-10 text-center animate-fade-up">
+            <div className="flex justify-center gap-2 mb-5">
+              {['#88619A', '#33A474', '#4298B4', '#E4AE3A'].map((c) => (
+                <span
+                  key={c}
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: c, opacity: 0.5 }}
+                />
+              ))}
+            </div>
+            <h3 className="font-display text-lg font-semibold text-body-light mb-2">
+              Performance Insights
+            </h3>
+            <p className="text-sm text-body-muted max-w-lg mx-auto leading-relaxed mb-5">
+              Run tests with the TruthfulQA benchmark to see which MBTI types are most accurate
+              and which hallucinate the most.
+            </p>
+            <div className="max-w-sm mx-auto rounded-xl border border-surface-200 bg-white p-4 font-mono text-xs text-left">
+              <p>
+                <span className="text-body-muted select-none">$ </span>
+                <span className="text-[#33A474]">npx</span>
+                <span className="text-body-light"> ai-mbti-test run --prompt &quot;...&quot;</span>
+              </p>
+              <p className="text-body-muted mt-1 text-[10px]">
+                TruthfulQA benchmark runs automatically
+              </p>
+            </div>
+          </section>
+        ) : (
+          <>
+            {/* Performance Summary Banner */}
+            {hasBenchmarkData && (
+              <section className="perf-banner rounded-2xl p-6 sm:p-8 animate-fade-up">
+                <div className="flex items-center gap-2.5 mb-5">
+                  <span className="w-2 h-2 rounded-full bg-[#33A474] animate-pulse" />
+                  <h2 className="font-display text-lg font-semibold text-body">
+                    Performance Insights
+                  </h2>
+                  <span className="text-[10px] font-mono text-body-muted ml-auto">
+                    TruthfulQA Benchmark
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="perf-metric-card">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-body-muted mb-1">
+                      Benchmarked
+                    </p>
+                    <p className="font-display text-2xl font-semibold text-body">{totalBenchmarked}</p>
+                    <p className="text-[10px] text-body-muted">tests</p>
+                  </div>
+                  <div className="perf-metric-card">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-body-muted mb-1">
+                      Avg Accuracy
+                    </p>
+                    <p className="font-display text-2xl font-semibold text-[#33A474]">
+                      {overallAccuracy.toFixed(1)}%
+                    </p>
+                    <p className="text-[10px] text-body-muted">across all types</p>
+                  </div>
+                  <div className="perf-metric-card">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-body-muted mb-1">
+                      Hallucination
+                    </p>
+                    <p className="font-display text-2xl font-semibold text-[#C75D5D]">
+                      {overallHallucination.toFixed(1)}%
+                    </p>
+                    <p className="text-[10px] text-body-muted">avg rate</p>
+                  </div>
+                  <div className="perf-metric-card">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-body-muted mb-1">
+                      Best Type
+                    </p>
+                    <p className="font-display text-2xl font-semibold" style={{ color: benchmarkByType[0]?.color }}>
+                      {benchmarkByType[0]?.type || '\u2014'}
+                    </p>
+                    <p className="text-[10px] text-body-muted">
+                      {benchmarkByType[0] ? `${benchmarkByType[0].avgAccuracy.toFixed(1)}% accuracy` : ''}
+                    </p>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Two-column: Accuracy by Type + Category / Telemetry */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* TruthfulQA Accuracy by MBTI Type */}
+              {hasBenchmarkData && (
+                <section className="bg-white rounded-2xl border border-surface-300 p-6 shadow-sm animate-fade-up">
+                  <h2 className="font-display text-lg font-semibold text-body mb-1">
+                    Accuracy by Personality
+                  </h2>
+                  <p className="text-xs text-body-muted mb-5">
+                    TruthfulQA benchmark accuracy per MBTI type
+                  </p>
+                  <div className="space-y-2.5">
+                    {benchmarkByType.map((d, i) => (
+                      <div key={d.type} className="flex items-center gap-3">
+                        <span className="text-[10px] font-mono text-body-muted w-4 text-right">
+                          {i + 1}
+                        </span>
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: d.color }}
+                        />
+                        <span className="font-display font-bold text-sm text-body w-11">
+                          {d.type}
+                        </span>
+                        <div className="flex-1 h-5 bg-surface-100 rounded-md overflow-hidden relative">
+                          {/* Accuracy bar (green) */}
+                          <div
+                            className="absolute left-0 top-0 h-full rounded-md transition-all duration-700"
+                            style={{
+                              width: `${d.avgAccuracy}%`,
+                              backgroundColor: '#33A474',
+                              opacity: 0.6,
+                            }}
+                          />
+                          {/* Hallucination overlay (red, from right) */}
+                          <div
+                            className="absolute right-0 top-0 h-full rounded-md transition-all duration-700"
+                            style={{
+                              width: `${d.avgHallucination}%`,
+                              backgroundColor: '#C75D5D',
+                              opacity: 0.25,
+                            }}
+                          />
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-xs font-mono font-semibold text-[#33A474] w-12 text-right tabular-nums">
+                            {d.avgAccuracy.toFixed(1)}%
+                          </span>
+                          <span className="text-[10px] font-mono text-[#C75D5D] w-12 text-right tabular-nums">
+                            {d.avgHallucination.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-4 mt-4 pt-4 border-t border-surface-200">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-sm bg-[#33A474] opacity-60" />
+                      <span className="text-[10px] text-body-muted">Accuracy</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-sm bg-[#C75D5D] opacity-25" />
+                      <span className="text-[10px] text-body-muted">Hallucination</span>
+                    </div>
+                    <span className="text-[10px] text-body-muted ml-auto">
+                      n per type shown
+                    </span>
+                  </div>
+                </section>
+              )}
+
+              {/* Right column: Category Breakdown or Telemetry */}
+              <div className="space-y-6">
+                {/* Category Breakdown */}
+                {hasBenchmarkData && categoryData.length > 0 && (
+                  <section className="bg-white rounded-2xl border border-surface-300 p-6 shadow-sm animate-fade-up">
+                    <h2 className="font-display text-lg font-semibold text-body mb-1">
+                      Accuracy by Category
+                    </h2>
+                    <p className="text-xs text-body-muted mb-5">
+                      Performance across knowledge domains
+                    </p>
+                    <div className="space-y-3.5">
+                      {categoryData.map((cat) => (
+                        <div key={cat.category}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-sm font-semibold text-body capitalize">
+                              {cat.category}
+                            </span>
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-sm font-mono font-semibold text-body tabular-nums">
+                                {cat.accuracy.toFixed(1)}%
+                              </span>
+                              <span className="text-[10px] font-mono text-body-muted">
+                                ({cat.correct}/{cat.total})
+                              </span>
+                            </div>
+                          </div>
+                          <div className="h-2 bg-surface-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-700"
+                              style={{
+                                width: `${cat.accuracy}%`,
+                                background: cat.accuracy >= 70
+                                  ? '#33A474'
+                                  : cat.accuracy >= 40
+                                  ? '#E4AE3A'
+                                  : '#C75D5D',
+                                opacity: 0.6,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Response Telemetry */}
+                {hasTelemetryData && (
+                  <section className="bg-white rounded-2xl border border-surface-300 p-6 shadow-sm animate-fade-up">
+                    <h2 className="font-display text-lg font-semibold text-body mb-1">
+                      Response Telemetry
+                    </h2>
+                    <p className="text-xs text-body-muted mb-5">
+                      Average response time and retry rate per MBTI type
+                    </p>
+                    <div className="space-y-2">
+                      {telemetryByType.map((d, i) => {
+                        const maxLatency = Math.max(...telemetryByType.map((t) => t.avgLatency), 1);
+                        const barWidth = (d.avgLatency / maxLatency) * 100;
+                        return (
+                          <div key={d.type} className="flex items-center gap-3">
+                            <span
+                              className="w-2 h-2 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: d.color }}
+                            />
+                            <span className="font-display font-bold text-sm text-body w-11">
+                              {d.type}
+                            </span>
+                            <div className="flex-1 h-4 bg-surface-100 rounded-md overflow-hidden">
+                              <div
+                                className="h-full rounded-md transition-all duration-500"
+                                style={{
+                                  width: `${barWidth}%`,
+                                  background: 'linear-gradient(90deg, #4298B4, #88619A)',
+                                  opacity: 0.45,
+                                }}
+                              />
+                            </div>
+                            <span className="text-xs font-mono text-body tabular-nums w-16 text-right">
+                              {d.avgLatency >= 1000
+                                ? `${(d.avgLatency / 1000).toFixed(1)}s`
+                                : `${Math.round(d.avgLatency)}ms`}
+                            </span>
+                            {d.avgRetries > 0 && (
+                              <span className="text-[10px] font-mono text-[#E4AE3A] w-14 text-right tabular-nums">
+                                {d.avgRetries.toFixed(1)} retry
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

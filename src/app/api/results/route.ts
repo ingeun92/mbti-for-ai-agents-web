@@ -4,7 +4,12 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { aiPrompt, answers, modelProvider, modelName, modelVersion, agentName, temperature } = body;
+    const {
+      aiPrompt, answers, modelProvider, modelName, modelVersion, agentName, temperature,
+      questionDetails, totalRetries, totalLatencyMs, avgLatencyMs,
+      runIndex, totalRuns,
+      truthfulQA,
+    } = body;
 
     // Validation
     if (!aiPrompt || typeof aiPrompt !== 'string') {
@@ -42,6 +47,16 @@ export async function POST(request: NextRequest) {
         modelVersion: modelVersion || null,
         agentName: agentName || null,
         temperature: typeof temperature === 'number' ? temperature : null,
+        // Telemetry
+        questionDetails: Array.isArray(questionDetails) ? questionDetails : undefined,
+        totalRetries: typeof totalRetries === 'number' ? totalRetries : null,
+        totalLatencyMs: typeof totalLatencyMs === 'number' ? totalLatencyMs : null,
+        avgLatencyMs: typeof avgLatencyMs === 'number' ? avgLatencyMs : null,
+        // Repeat runs
+        runIndex: typeof runIndex === 'number' ? runIndex : null,
+        totalRuns: typeof totalRuns === 'number' ? totalRuns : null,
+        // TruthfulQA benchmark
+        truthfulQA: truthfulQA && typeof truthfulQA === 'object' ? truthfulQA : undefined,
       },
     });
 

@@ -20,6 +20,19 @@ model Test {
   temperature   Float?
   createdAt     DateTime @default(now())
 
+  // Telemetry (Feature 1)
+  questionDetails Json?
+  totalRetries    Int?
+  totalLatencyMs  Float?
+  avgLatencyMs    Float?
+
+  // Repeat runs (Feature 2)
+  runIndex   Int?
+  totalRuns  Int?
+
+  // TruthfulQA benchmark (Feature 3)
+  truthfulQA Json?
+
   @@index([modelProvider, modelName])
   @@index([agentName])
   @@index([mbtiResult])

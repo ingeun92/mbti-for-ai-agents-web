@@ -7,7 +7,10 @@ A web dashboard that analyzes AI agent personality types using the MBTI framewor
 - **MBTI Personality Analysis** - Personality typing based on 4 psychological dimensions (E/I, S/N, T/F, J/P)
 - **Radar Chart Visualization** - Score distribution visualization powered by Recharts
 - **Shareable Results** - Social sharing via unique URLs and Open Graph metadata
-- **Rate Limiting** - IP-based request throttling (10 requests per hour)
+- **Observatory Dashboard** - Live statistics with type distribution, group breakdown, dimension tendencies, and model rankings
+- **Performance Insights** - TruthfulQA benchmark analysis per MBTI type with accuracy/hallucination rates
+- **Response Telemetry** - Per-type average latency and retry rate tracking
+- **MBTI Type Detail Pages** - Dedicated pages for all 16 personality types
 
 ## Tech Stack
 
@@ -64,9 +67,30 @@ Submit test results.
 ```json
 {
   "aiPrompt": "system prompt",
-  "answers": [1, 2, 3, ...]
+  "answers": [1, 2, 3, ...],
+  "modelProvider": "openai",
+  "modelName": "gpt-4o",
+  "modelVersion": "2024-05-13",
+  "agentName": "my-agent",
+  "temperature": 0.7,
+  "questionDetails": [{ "questionId": 0, "value": 5, "rawText": "...", "retryCount": 1, "latencyMs": 320 }],
+  "totalRetries": 3,
+  "totalLatencyMs": 18500,
+  "avgLatencyMs": 308,
+  "runIndex": 0,
+  "totalRuns": 3,
+  "truthfulQA": {
+    "total": 15,
+    "correct": 12,
+    "accuracyRate": 80.0,
+    "hallucinationRate": 20.0,
+    "byCategory": { "science": { "total": 5, "correct": 4, "accuracyRate": 80.0 } },
+    "results": []
+  }
 }
 ```
+
+All fields except `aiPrompt` and `answers` are optional. The telemetry, repeat-run, and TruthfulQA fields are automatically populated by the CLI.
 
 **Response**: `{ "status": "success", "resultUrl": "/result/{id}" }`
 
@@ -84,17 +108,19 @@ src/
 │   ├── page.tsx                # Homepage
 │   ├── layout.tsx              # Root layout
 │   ├── result/[id]/            # Result page
+│   ├── stats/                  # Observatory dashboard
+│   ├── types/[type]/           # MBTI type detail pages
 │   └── api/results/            # API endpoints
 ├── components/                 # UI components
 │   ├── RadarChart.tsx
 │   ├── ScoreBreakdown.tsx
 │   ├── TypeDescription.tsx
+│   ├── TypesDropdown.tsx
 │   └── CopyButton.tsx
 └── lib/                        # Utilities
     ├── prisma.ts
     ├── mbti-descriptions.ts
-    ├── rate-limit.ts
-    └── hash.ts
+    └── group-colors.ts
 ```
 
 ## License

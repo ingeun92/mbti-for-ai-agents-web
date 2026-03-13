@@ -124,3 +124,20 @@ body {
   border: 1.5px dashed #E0E0E0;
   background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%);
 }
+
+/* Performance insights banner */
+.perf-banner {
+  background: linear-gradient(135deg, #F8F9FA 0%, #F0F4F7 50%, #F4F0F6 100%);
+  border: 1px solid #E8E8E8;
+}
+
+.perf-metric-card {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  transition: background-color 0.2s ease;
+}
+.perf-metric-card:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
